@@ -1,5 +1,7 @@
 #include "tokenizer.h"
 
+#include <re2/re2.h>
+
 namespace {
 
 // static const LazyRE2 token_re = ...
