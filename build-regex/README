@@ -1,0 +1,6 @@
+To build regular expressions:
+
+```sh
+bundle install
+./generate-c++.rb
+```
