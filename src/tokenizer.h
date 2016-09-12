@@ -10,10 +10,12 @@ class Tokenizer_priv;
 
 class Tokenizer {
 public:
+  typedef re2::StringPiece Token;
+
   Tokenizer();
   ~Tokenizer();
 
-  std::vector<re2::StringPiece> tokenize(const re2::StringPiece& text) const;
+  std::vector<Token> tokenize(const re2::StringPiece& text) const;
   int re2ProgramSize() const;
 
 private:
