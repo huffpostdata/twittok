@@ -1,3 +1,4 @@
 *.o
 twittok
+test/run
 .depend
