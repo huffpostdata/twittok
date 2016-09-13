@@ -157,11 +157,11 @@ main(int argc, char** argv) {
     if (untokenizedBio.followsTrump) nTrump++;
     if (untokenizedBio.followsClinton && untokenizedBio.followsTrump) nBoth++;
 
-    if (untokenizedBio.len == 0) continue;
+    if (untokenizedBio.empty()) continue;
 
     if (untokenizedBio.followsClinton) nClintonWithBio++;
     if (untokenizedBio.followsTrump) nTrumpWithBio++;
-    if (untokenizedBio.followsClinton && untokenizedBio.followsTrump) nBoth++;
+    if (untokenizedBio.followsClinton && untokenizedBio.followsTrump) nBothWithBio++;
 
     if ((nClintonWithBio + nTrumpWithBio - nBothWithBio) % 50000 == 0) {
       std::cerr << "Processed " << (nClintonWithBio + nTrumpWithBio - nBothWithBio) << " bios..." << std::endl;
@@ -180,17 +180,13 @@ main(int argc, char** argv) {
   }
 
   std::cout << "Statistics:" << std::endl;
-  std::cout << "  Clinton followers: " << nClinton << std::endl;
+  std::cout << "  Total followers: " << (nClinton + nTrump - nBoth) << std::endl;
   std::cout << "  Clinton followers: " << nClinton << std::endl;
   std::cout << "  Trump followers: " << nTrump << std::endl;
-  std::cout << "  Trump followers: " << nTrump << std::endl;
   std::cout << "  (Clinton+Trump) followers: " << nBoth << std::endl;
-  std::cout << "  (Clinton+Trump) followers: " << nBoth << std::endl;
-  std::cout << "  Clinton followers with bios: " << nClintonWithBio << std::endl;
+  std::cout << "  Total followers with bios: " << (nClintonWithBio + nTrumpWithBio - nBothWithBio) << std::endl;
   std::cout << "  Clinton followers with bios: " << nClintonWithBio << std::endl;
   std::cout << "  Trump followers with bios: " << nTrumpWithBio << std::endl;
-  std::cout << "  Trump followers with bios: " << nTrumpWithBio << std::endl;
-  std::cout << "  (Clinton+Trump) followers with bios: " << nBothWithBio << std::endl;
   std::cout << "  (Clinton+Trump) followers with bios: " << nBothWithBio << std::endl;
 
   std::ofstream tokensFile(argv[2], std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);

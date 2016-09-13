@@ -17,6 +17,7 @@ struct UntokenizedBio {
     : id(id_), followsClinton(followsClinton_), followsTrump(followsTrump_), utf8(utf8_) {}
 
   bool isNull() const { return id == 0; }
+  bool empty() const { return utf8.empty(); }
 
   uint64_t id;
   bool followsClinton;
