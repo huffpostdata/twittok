@@ -14,6 +14,26 @@ public:
   const char* originalUtf8;
   size_t originalLength;
 
+  std::string gramsString() const {
+    if (N == 1) return grams[0];
+
+    size_t len = N - 1; // spaces
+    for (size_t i = 0; i < N; i++) {
+      len += grams[i].size();
+    }
+
+    std::string ret(len, ' '); // spaces so we don't need to write them in between
+    size_t pos = 0;
+    for (size_t i = 0; i < N; i++) {
+      ret.replace(pos, grams[i].size(), grams[i]);
+      pos += grams[i].size() + 1;
+    }
+
+    return ret;
+  }
+
+  std::string originalString() const { return std::string(originalUtf8, originalLength); }
+
   /**
    * Returns an Ngram containing all but the first token in this ngram.
    *

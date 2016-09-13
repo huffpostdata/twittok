@@ -2,6 +2,7 @@
 
 #include <array>
 #include <cstdlib>
+#include <forward_list>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -32,66 +33,23 @@ struct NgramInfo {
   OriginalMapping originalTexts;
 };
 
-template<int N>
 class NgramInfoTable {
 public:
-  void add(const Ngram<N>& ngram, bool followsClinton, bool followsTrump) {
-    gramToInfo[ngram.grams[0]].add(ngram.cdr(), followsClinton, followsTrump);
-  }
-
-  spp::sparse_hash_map<std::string, NgramInfoTable<N - 1> > gramToInfo;
-};
-
-template<>
-class NgramInfoTable<1> {
-public:
-  void add(const Unigram& unigram, bool followsClinton, bool followsTrump) {
-    NgramInfo& info = gramToInfo[unigram.grams[0]];
-    if (followsClinton) info.nClinton++;
-    if (followsTrump) info.nTrump++;
-    if (followsClinton && followsTrump) info.nBoth++;
-    ++info.originalTexts[std::string(unigram.originalUtf8, unigram.originalLength)];
+  template<int N>
+  void add(const Bio& bio, const Ngram<N> ngram) {
+    NgramInfo& info = gramToInfo[ngram.gramsString()];
+    if (bio.followsClinton) info.nClinton++;
+    if (bio.followsTrump) info.nTrump++;
+    if (bio.followsClinton && bio.followsTrump) info.nBoth++;
+    ++info.originalTexts[ngram.originalString()];
   }
 
   spp::sparse_hash_map<std::string, NgramInfo> gramToInfo;
 };
 
-typedef NgramInfoTable<1> UnigramInfoTable;
-typedef NgramInfoTable<2> BigramInfoTable;
-typedef NgramInfoTable<3> TrigramInfoTable;
-
-}; // namespace twittok
-
 namespace {
 
 static const int MinMappingCount = 3; // Below this, we lump mappings to "Other" ... and if even "Other" doesn't have this, we nix the mapping
-
-template<int N>
-std::ostream& operator<<(std::ostream& os, const twittok::NgramInfoTable<N>& table)
-{
-  for (const auto& pair : table.gramToInfo) {
-    os << pair.first << "(" << pair.second << ")";
-  }
-
-  return os;
-}
-
-template<>
-std::ostream& operator<<(std::ostream& os, const twittok::UnigramInfoTable& table)
-{
-  for (const auto& pair : table.gramToInfo) {
-    const auto& info = pair.second;
-    os << pair.first << "(c:" << info.nClinton << ",t:" << info.nTrump << ",b:" << info.nBoth << ",";
-
-    for (const auto& innerPair : info.originalTexts) {
-      os << "[" << innerPair.first << ":" << innerPair.second << "]";
-    }
-
-    os << ")";
-  }
-
-  return os;
-}
 
 void
 dumpMappings(std::ostream& os, const OriginalMapping& originalMapping)
@@ -111,15 +69,11 @@ dumpMappings(std::ostream& os, const OriginalMapping& originalMapping)
   }
 }
 
-}; // namespace ""
+std::forward_list<twittok::UntokenizedBio>
+readUntokenizedBioFromFile(const char* csvFilename)
+{
+  std::cout << "Reading CSV file " << csvFilename << "..." << std::endl;
 
-int
-main(int argc, char** argv) {
-  twittok::Tokenizer tokenizer;
-
-  twittok::UnigramInfoTable unigramInfoTable;
-  twittok::BigramInfoTable bigramInfoTable;
-  twittok::TrigramInfoTable trigramInfoTable;
   size_t nClinton = 0;
   size_t nTrump = 0;
   size_t nBoth = 0;
@@ -127,16 +81,9 @@ main(int argc, char** argv) {
   size_t nTrumpWithBio = 0;
   size_t nBothWithBio = 0;
 
-  unigramInfoTable.gramToInfo.reserve(10000000);
-  bigramInfoTable.gramToInfo.reserve(10000000);
-  trigramInfoTable.gramToInfo.reserve(10000000);
+  twittok::CsvBioReader reader(csvFilename);
 
-  if (argc != 4) {
-    std::cerr << "Usage: " << argv[0] << " DATA.csv OUT-TOKENS.tsv OUT-MAPPINGS.tsv" << std::endl;
-    exit(1);
-  }
-
-  twittok::CsvBioReader reader(argv[1]);
+  std::forward_list<twittok::UntokenizedBio> ret;
 
   while (true) {
     twittok::CsvBioReader::Error error;
@@ -149,8 +96,7 @@ main(int argc, char** argv) {
 
     if (error != twittok::CsvBioReader::Error::Success) {
       std::cerr << "ERROR reading CSV: " << twittok::CsvBioReader::describeError(error) << std::endl;
-      std::cerr << "Skipping bio" << std::endl;
-      return 1;
+      return std::forward_list<twittok::UntokenizedBio>();
     }
 
     if (untokenizedBio.followsClinton) nClinton++;
@@ -163,20 +109,11 @@ main(int argc, char** argv) {
     if (untokenizedBio.followsTrump) nTrumpWithBio++;
     if (untokenizedBio.followsClinton && untokenizedBio.followsTrump) nBothWithBio++;
 
-    if ((nClintonWithBio + nTrumpWithBio - nBothWithBio) % 50000 == 0) {
-      std::cerr << "Processed " << (nClintonWithBio + nTrumpWithBio - nBothWithBio) << " bios..." << std::endl;
+    if ((nClintonWithBio + nTrumpWithBio - nBothWithBio) % 500000 == 0) {
+      std::cerr << "Read " << (nClintonWithBio + nTrumpWithBio - nBothWithBio) << " bios..." << std::endl;
     }
 
-    twittok::Bio bio = twittok::Bio::buildByTokenizing(untokenizedBio, tokenizer);
-
-    auto unigrams = bio.unigrams();
-    std::for_each(unigrams.cbegin(), unigrams.cend(), [bio, &unigramInfoTable](auto const& unigram) { unigramInfoTable.add(unigram, bio.followsClinton, bio.followsTrump); });
-
-    auto bigrams = bio.bigrams();
-    std::for_each(bigrams.cbegin(), bigrams.cend(), [bio, &bigramInfoTable](auto const& bigram) { bigramInfoTable.add(bigram, bio.followsClinton, bio.followsTrump); });
-
-    auto trigrams = bio.trigrams();
-    std::for_each(trigrams.cbegin(), trigrams.cend(), [bio, &trigramInfoTable](auto const& trigram) { trigramInfoTable.add(trigram, bio.followsClinton, bio.followsTrump); });
+    ret.push_front(untokenizedBio);
   }
 
   std::cout << "Statistics:" << std::endl;
@@ -189,10 +126,45 @@ main(int argc, char** argv) {
   std::cout << "  Trump followers with bios: " << nTrumpWithBio << std::endl;
   std::cout << "  (Clinton+Trump) followers with bios: " << nBothWithBio << std::endl;
 
+  return ret;
+}
+
+}; // namespace ""
+
+int
+main(int argc, char** argv) {
+  if (argc != 4) {
+    std::cerr << "Usage: " << argv[0] << " DATA.csv OUT-TOKENS.tsv OUT-MAPPINGS.tsv" << std::endl;
+    exit(1);
+  }
+
+  std::forward_list<twittok::UntokenizedBio> untokenizedBios = readUntokenizedBioFromFile(argv[1]);
+
+  twittok::Tokenizer tokenizer;
+  twittok::NgramInfoTable ngrams;
+  ngrams.gramToInfo.reserve(100*1000*1000); // speed up the start
+
+  size_t n = 0;
+
+  for (const auto& untokenizedBio : untokenizedBios) {
+    twittok::Bio bio = twittok::Bio::buildByTokenizing(untokenizedBio, tokenizer);
+
+    n++;
+    if (n % 100000 == 0) {
+      std::cerr << "Processed " << n << " bios..." << std::endl;
+    }
+
+    for (const auto& ngram : bio.unigrams()) { ngrams.add(bio, ngram); }
+    for (const auto& ngram : bio.bigrams()) { ngrams.add(bio, ngram); }
+    for (const auto& ngram : bio.trigrams()) { ngrams.add(bio, ngram); }
+  }
+
+  std::cout << "Dumping results" << std::endl;
+
   std::ofstream tokensFile(argv[2], std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
   std::ofstream mappingsFile(argv[3], std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
 
-  for (const auto& pair : unigramInfoTable.gramToInfo) {
+  for (const auto& pair : ngrams.gramToInfo) {
     const auto& token = pair.first;
     const auto& info = pair.second;
 
@@ -201,39 +173,6 @@ main(int argc, char** argv) {
 
       mappingsFile << token << "\n";
       dumpMappings(mappingsFile, info.originalTexts);
-    }
-  }
-
-  for (const auto& pair : bigramInfoTable.gramToInfo) {
-    const auto& token1 = pair.first;
-    for (const auto& pair2 : pair.second.gramToInfo) {
-      const auto& token2 = pair2.first;
-      const auto& info = pair2.second;
-
-      if (info.nTotal() > MinMappingCount) {
-        tokensFile << token1 << " " << token2 << "\t" << info.nClinton << "\t" << info.nTrump << "\t" << info.nBoth << "\n";
-
-        mappingsFile << token1 << " " << token2 << "\n";
-        dumpMappings(mappingsFile, info.originalTexts);
-      }
-    }
-  }
-
-  for (const auto& pair : trigramInfoTable.gramToInfo) {
-    const auto& token1 = pair.first;
-    for (const auto& pair2 : pair.second.gramToInfo) {
-      const auto& token2 = pair2.first;
-      for (const auto& pair3 : pair2.second.gramToInfo) {
-        const auto& token3 = pair3.first;
-        const auto& info = pair3.second;
-
-        if (info.nTotal() > MinMappingCount) {
-          tokensFile << token1 << " " << token2 << " " << token3 << "\t" << info.nClinton << "\t" << info.nTrump << "\t" << info.nBoth << "\n";
-
-          mappingsFile << token1 << " " << token2 << " " << token3 << "\n";
-          dumpMappings(mappingsFile, info.originalTexts);
-        }
-      }
     }
   }
 }

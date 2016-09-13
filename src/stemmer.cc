@@ -1,3 +1,4 @@
+#include <cassert>
 #include <cstddef>
 #include <cstring>
 #include <unicode/translit.h>
@@ -392,6 +393,8 @@ stem(const char* utf8, size_t len)
 		case AsciiLetters:
 			return porter2_stem(normalized_utf8, normalized_len);
 			break;
+    default:
+      assert(false);
 	}
 }
 

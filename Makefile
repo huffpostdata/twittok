@@ -36,7 +36,7 @@ depend: .depend
 	$(CXX) $(CPPFLAGS) -MM $^ >> ./.depend;
 
 clean:
-	$(RM) $(OBJS) $(GTEST_OBJS) twittok test/run
+	$(RM) $(OBJS) $(MAIN_OBJS) $(GTEST_OBJS) twittok test/run
 
 dist-clean: clean
 	$(RM) *~ .depend
