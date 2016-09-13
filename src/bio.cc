@@ -1,6 +1,7 @@
 #include "bio.h"
 
 #include <algorithm>
+#include <iostream>
 
 #include "ngram.h"
 #include "tokenizer.h"
@@ -60,11 +61,19 @@ Bio::Bio(const std::vector<Tokenizer::Token>& tokens, bool followsClinton_, bool
 {
   unigrams_.reserve(tokens.size());
   for (const auto& token : tokens) {
-    Unigram unigram(tokenToUnigram(token));
+    Unigram unigram = tokenToUnigram(token);
     if (!unigram.grams[0].empty()) {
       unigrams_.push_back(unigram);
     }
   }
+}
+
+Bio
+Bio::buildByTokenizing(const UntokenizedBio& untokenizedBio, const Tokenizer& tokenizer)
+{
+  const re2::StringPiece str(untokenizedBio.utf8);
+  const auto tokens = tokenizer.tokenize(str);
+  return Bio(tokens, untokenizedBio.followsClinton, untokenizedBio.followsTrump);
 }
 
 std::vector<Unigram>

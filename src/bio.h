@@ -6,6 +6,7 @@
 
 #include "ngram.h"
 #include "tokenizer.h"
+#include "untokenized_bio.h"
 
 namespace twittok {
 
@@ -18,6 +19,7 @@ namespace twittok {
 class Bio {
 public:
   Bio(const std::vector<Tokenizer::Token>& tokens, bool followsClinton_, bool followsTrump_);
+  static Bio buildByTokenizing(const UntokenizedBio& untokenizedBio, const Tokenizer& tokenizer);
 
   std::vector<Unigram> unigrams() const;
   std::vector<Bigram> bigrams() const;
