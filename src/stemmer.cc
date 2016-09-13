@@ -24,7 +24,7 @@ struct StringRef {
 	bool operator<(const StringRef& rhs) const {
 		int cmp = std::strncmp(utf8, rhs.utf8, std::min(len, rhs.len));
 		if (cmp == 0) {
-			return len - rhs.len; // shorter string comes first
+			return len < rhs.len; // shorter string comes first
 		} else {
 			return cmp < 0; // higher-in-the-alphabet string comes first
 		}
@@ -33,6 +33,8 @@ struct StringRef {
 	bool operator==(const StringRef& rhs) const {
 		return len == rhs.len && strncmp(utf8, rhs.utf8, len) == 0;
 	}
+
+	std::string as_string() const { return std::string(utf8, len); }
 };
 
 // These max buffer sizes are kind of hand-wavy. Don't trust them.
@@ -254,12 +256,12 @@ bool is_stopword(const char* utf8, size_t len)
 	StringRef needle(utf8, len);
 
 	while (begin < end) {
-		size_t mid = (begin + end) >> 1; // mid >= begin, mid < end
+		size_t mid = (begin + end) >> 1; // begin <= mid < end
 		const StringRef& stopword = EnglishStopwords[mid];
 		if (stopword < needle) {
-			begin = mid + 1; // begin <= end
+			begin = mid + 1; // begin <= end because mid < end
 		} else {
-			end = mid; // begin <= end
+			end = mid; // begin <= end because begin <= mid
 		}
 	}
 
