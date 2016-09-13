@@ -11,19 +11,11 @@ class StemTest : public testing::Test {
 protected:
   void try_stem(const char* in_utf8, const char* expect_out_utf8)
   {
-    size_t len(strlen(in_utf8));
-    size_t expect_out_len(strlen(expect_out_utf8));
-    size_t out_len;
-    std::unique_ptr<char> out_utf8_ptr(new char[len * 2 + 1]);
-    char* out_utf8 = out_utf8_ptr.get();
-    stem(in_utf8, len, out_utf8, &out_len);
+    std::string in_string(in_utf8);
+    std::string expect_out_string(expect_out_utf8);
+    std::string out_string = stem(in_string.c_str(), in_string.size());
 
-    ASSERT_EQ(expect_out_len, out_len);
-
-    if (out_len > 0) {
-      out_utf8[out_len] = '\0'; // for assertion
-      EXPECT_STREQ(expect_out_utf8, out_utf8);
-    }
+    EXPECT_EQ(expect_out_string, out_string);
   }
 };
 

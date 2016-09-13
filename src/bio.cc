@@ -14,12 +14,10 @@ static const size_t MaxStemmedStringBytes = twittok::stemmer::MaxBytesToStem * 4
 twittok::Unigram
 tokenToUnigram(const twittok::Tokenizer::Token& token)
 {
-  char stemmed[MaxStemmedStringBytes];
-  size_t stemmedLength;
-  twittok::stemmer::stem(token.data(), token.size(), stemmed, &stemmedLength);
+  std::string stemmed = twittok::stemmer::stem(token.data(), token.size());
 
   return {
-    { std::string(stemmed, stemmedLength) },
+    { stemmed },
     token.data(),
     static_cast<size_t>(token.size())
   };

@@ -315,13 +315,12 @@ casefold_and_normalize(const char* utf8, size_t len, char* out_utf8, size_t* out
 	*out_len = static_cast<size_t>(out_len32);
 }
 
-void
-porter2_stem(const char* utf8, size_t len, char* out_utf8, size_t* out_len)
+std::string
+porter2_stem(const char* utf8, size_t len)
 {
 	std::string string(utf8, len);
 	Porter2Stemmer::stem(string);
-	string.copy(out_utf8, string.size());
-	*out_len = string.size();
+  return string;
 }
 
 /**
@@ -369,12 +368,11 @@ namespace twittok {
 
 namespace stemmer {
 
-void
-stem(const char* utf8, size_t len, char* out_utf8, size_t* out_len)
+std::string
+stem(const char* utf8, size_t len)
 {
 	if (should_abort_stem_right_away(utf8, len)) {
-		*out_len = 0;
-		return;
+    return std::string();
 	}
 
 	char normalized_utf8[MaxNormalizedLen];
@@ -386,14 +384,13 @@ stem(const char* utf8, size_t len, char* out_utf8, size_t* out_len)
 		case Empty:
 		case Stopword:
 		case Symbol:
-			*out_len = 0;
+      return std::string();
 			break;
 		case Other:
-			memcpy(out_utf8, normalized_utf8, normalized_len);
-			*out_len = normalized_len;
+      return std::string(normalized_utf8, normalized_len);
 			break;
 		case AsciiLetters:
-			porter2_stem(normalized_utf8, normalized_len, out_utf8, out_len);
+			return porter2_stem(normalized_utf8, normalized_len);
 			break;
 	}
 }

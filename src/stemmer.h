@@ -2,6 +2,7 @@
 #define STEMMER_H
 
 #include <cstddef>
+#include <string>
 
 namespace twittok {
 
@@ -38,7 +39,7 @@ const size_t MaxBytesToStem = 30; // 30 bytes -> min. 7 codepoints, or 30 Englis
  * out_len will never exceed double len. utf8 need not be NULL-terminated; and
  * out_utf8 won't be.
  */
-void stem(const char* utf8, size_t len, char* out_utf8, size_t* out_len);
+std::string stem(const char* utf8, size_t len);
 
 };
 
