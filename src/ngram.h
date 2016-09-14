@@ -5,14 +5,15 @@
 #include <array>
 #include <string>
 
+#include "string_ref.h"
+
 namespace twittok {
 
 template<int N>
 class Ngram {
 public:
   std::array<std::string, N> grams;
-  const char* originalUtf8;
-  size_t originalLength;
+  StringRef original;
 
   std::string gramsString() const {
     if (N == 1) return grams[0];
@@ -32,26 +33,10 @@ public:
     return ret;
   }
 
-  std::string originalString() const { return std::string(originalUtf8, originalLength); }
-
-  /**
-   * Returns an Ngram containing all but the first token in this ngram.
-   *
-   * ("cdr" is from LISP: https://en.wikipedia.org/wiki/CAR_and_CDR)
-   */
-  Ngram<N - 1> cdr() const {
-    std::array<std::string, N - 1> cdrGrams;
-    std::copy(grams.cbegin() + 1, grams.cend(), cdrGrams.begin());
-
-    return {
-      cdrGrams,
-      originalUtf8,
-      originalLength
-    };
-  }
-
   /**
    * Returns whether LHS grams == RHS grams.
+   *
+   * Even if this returns true, the original strings may be different.
    */
   bool operator==(const Ngram<N>& rhs) const {
     for (size_t i = 0; i < N; i++) {

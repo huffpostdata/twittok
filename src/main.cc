@@ -11,15 +11,22 @@
 #include "csv_bio_reader.h"
 #include "untokenized_bio.h"
 #include "ngram.h"
+#include "string_ref.h"
 #include "sparsepp.h"
 
 #define MAX_LINE_SIZE 1024
 
-namespace {
-  typedef spp::sparse_hash_map<std::string, int32_t> OriginalMapping;
-} // namespace
+namespace std {
+
+template<> struct hash<twittok::StringRef> {
+  size_t operator()(const twittok::StringRef& str) { return str.hash(); }
+};
+
+}
 
 namespace twittok {
+
+typedef spp::sparse_hash_map<twittok::StringRef, int32_t> OriginalMapping;
 
 struct NgramInfo {
   size_t nClinton;
@@ -41,27 +48,29 @@ public:
     if (bio.followsClinton) info.nClinton++;
     if (bio.followsTrump) info.nTrump++;
     if (bio.followsClinton && bio.followsTrump) info.nBoth++;
-    ++info.originalTexts[ngram.originalString()];
+    ++info.originalTexts[ngram.original];
   }
 
   spp::sparse_hash_map<std::string, NgramInfo> gramToInfo;
 };
+
+} // namespace twittok
 
 namespace {
 
 static const int MinMappingCount = 3; // Below this, we lump mappings to "Other" ... and if even "Other" doesn't have this, we nix the mapping
 
 void
-dumpMappings(std::ostream& os, const OriginalMapping& originalMapping)
+dumpMappings(std::ostream& os, const twittok::OriginalMapping& originalMapping)
 {
   size_t nOther = 0;
   for (const auto& m : originalMapping) {
     const auto& original = m.first;
     const size_t count = m.second;
-    if (count < MinMappingCount || original.find('\n') != std::string::npos || original.find('\t') != std::string::npos) {
+    if (count < MinMappingCount || original.contains('\n') || original.contains('\t')) {
       nOther += count;
     } else {
-      os << "\t" << count << "\t" << original << "\n";
+      os << "\t" << count << "\t" << original.to_string() << "\n";
     }
   }
   if (nOther != 0) {
@@ -129,12 +138,12 @@ readUntokenizedBioFromFile(const char* csvFilename)
   return ret;
 }
 
-}; // namespace ""
+} // namespace ""
 
 int
 main(int argc, char** argv) {
-  if (argc != 4) {
-    std::cerr << "Usage: " << argv[0] << " DATA.csv OUT-TOKENS.tsv OUT-MAPPINGS.tsv" << std::endl;
+  if (argc != 3) {
+    std::cerr << "Usage: " << argv[0] << " DATA.csv OUT-TOKENS.txt" << std::endl;
     exit(1);
   }
 
@@ -162,7 +171,6 @@ main(int argc, char** argv) {
   std::cout << "Dumping results" << std::endl;
 
   std::ofstream tokensFile(argv[2], std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
-  std::ofstream mappingsFile(argv[3], std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
 
   for (const auto& pair : ngrams.gramToInfo) {
     const auto& token = pair.first;
@@ -170,9 +178,9 @@ main(int argc, char** argv) {
 
     if (info.nTotal() > MinMappingCount) {
       tokensFile << token << "\t" << info.nClinton << "\t" << info.nTrump << "\t" << info.nBoth << "\n";
-
-      mappingsFile << token << "\n";
-      dumpMappings(mappingsFile, info.originalTexts);
+      dumpMappings(tokensFile, info.originalTexts);
     }
   }
+
+  return 0;
 }

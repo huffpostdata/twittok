@@ -18,8 +18,7 @@ tokenToUnigram(const twittok::Tokenizer::Token& token)
 
   return {
     { stemmed },
-    token.data(),
-    static_cast<size_t>(token.size())
+    twittok::StringRef(token.data(), token.size())
   };
 };
 
@@ -42,8 +41,10 @@ unigramsToNgrams(const std::vector<twittok::Unigram>& unigrams)
     const twittok::Unigram& beginUnigram(unigrams[i]);
     const twittok::Unigram& endUnigram(unigrams[i + N - 1]);
 
-    ngram.originalUtf8 = beginUnigram.originalUtf8;
-    ngram.originalLength = endUnigram.originalUtf8 - beginUnigram.originalUtf8 + endUnigram.originalLength;
+    ngram.original = twittok::StringRef(
+      beginUnigram.original.data(),
+      endUnigram.original.data() - beginUnigram.original.data() + endUnigram.original.size()
+    );
   }
 
   return ngrams;

@@ -15,3 +15,4 @@ library:
 # Dependencies
 
 * [re2](https://github.com/google/re2): on Fedora 24: `sudo dnf install re2-devel`
+* [cityhash](https://github.com/google/cityhash): on Fedora 24: `git clone https://github.com/google/cityhash.git && cd cityhash && ./configure && make && sudo make install && sudo ldconfig`
