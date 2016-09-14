@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cstdlib>
 #include <forward_list>
+#include <unordered_map>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -12,7 +13,6 @@
 #include "untokenized_bio.h"
 #include "ngram.h"
 #include "string_ref.h"
-#include "sparsepp.h"
 
 #define MAX_LINE_SIZE 1024
 
@@ -26,7 +26,7 @@ struct OriginalMapping {
   // comparisons almost always use the same RAM because we rarely (never?) have
   // compare the original string's bytes (the hash and length are good enough).
   //
-  // Using a vector uses 1/2 the RAM of a sparse_map.
+  // A vector uses 1/2 the RAM of a map.
 
   struct Item {
     twittok::StringRef string;
@@ -81,7 +81,7 @@ public:
     ++info.originalTexts[ngram.original];
   }
 
-  spp::sparse_hash_map<std::string, NgramInfo> gramToInfo;
+  std::unordered_map<std::string, NgramInfo> gramToInfo;
 };
 
 } // namespace twittok
