@@ -86,14 +86,19 @@ HASHTAG_LETTERS_SET = "[#{HASHTAG_LETTERS_AND_MARKS}]"
 # Also, nix grouping.
 # Also, nix negative lookahead: RE2 doesn't support it, and it's probably super-rare anyway
 #HASHTAG = "(\A|[^&#{HASHTAG_LETTERS_NUMERALS}])(#|＃)(?!\ufe0f|\u20e3)(#{HASHTAG_LETTERS_NUMERALS_SET}*#{HASHTAG_LETTERS_SET}#{HASHTAG_LETTERS_NUMERALS_SET}*)"
-HASHTAG = "(?:#|＃)(#{HASHTAG_LETTERS_NUMERALS_SET}*#{HASHTAG_LETTERS_SET}#{HASHTAG_LETTERS_NUMERALS_SET}*)"
+#
+# DEVIATE_FROM_TWITTER: allow hashtags without letters. That makes things 10%
+# faster. Plus, one can argue that "#1" should be a tag, anyway.
+#HASHTAG = "[#＃]#{HASHTAG_LETTERS_NUMERALS_SET}*#{HASHTAG_LETTERS_SET}#{HASHTAG_LETTERS_NUMERALS_SET}*"
+HASHTAG = "[#＃]#{HASHTAG_LETTERS_NUMERALS_SET}+"
 REGEXEN[:valid_hashtag] = "(?:#{HASHTAG})"
 
 # DEVIATE_FROM_TWITTER: same for :valid_mention_or_list:
 # * Nix :valid_mention_preceding_chars
 # * Nix grouping
+# * Don't worry about {1,20} or {0,24}: just use + and *. 33% speedup with re2.
 REGEXEN[:at_signs] = "[@＠]"
-REGEXEN[:valid_mention_or_list] = "(?:#{REGEXEN[:at_signs]}[a-zA-Z0-9_]{1,20}(?:\\/[a-zA-Z][a-zA-Z0-9_\\-]{0,24})?)"
+REGEXEN[:valid_mention_or_list] = "(?:#{REGEXEN[:at_signs]}[a-zA-Z0-9_]+(?:\\/[a-zA-Z][a-zA-Z0-9_\\-]*)?)"
 
 DOMAIN_VALID_CHARS = "[^#{PUNCTUATION_CHARS}#{SPACE_CHARS}#{CTRL_CHARS}#{INVALID_CHARACTERS}#{UNICODE_SPACES}]"
 REGEXEN[:valid_subdomain] = "(?:(?:#{DOMAIN_VALID_CHARS}(?:[_-]|#{DOMAIN_VALID_CHARS})*)?#{DOMAIN_VALID_CHARS}\\.)"
@@ -133,7 +138,8 @@ HTML_TAG = "(?:<[^>\\s]+>)"
 # NLTK_DEVIATE "phone number" is a bad-idea regex. But numbers with lots of
 # dashes are great. Adjusted NUMBER to allow dashes within.
 # NLTK_DEVIATE use \pL instead of [a-z]
-WORD_WITH_APOSTROPHES_OR_DASHES = "(?:\\pL[\\pL'\\-_]+\\pL)"
+# NLTK_DEVIATE rearrange (but keep logic the same) to speed up RE2 by 10%
+WORD_WITH_APOSTROPHES_OR_DASHES = "(?:(?:\\pL+['\\-_]+)+\\pL+)"
 # NLTK_DEVIATE use \pN instead of \d
 NUMBER = "(?:[+\\-]?\\pN+([,/.:\\-]\\pN+)*[+\\-]?)"
 # NLTK_DEVIATE use \pL\pN instead of \w

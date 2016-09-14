@@ -2,6 +2,8 @@
 
 #include <re2/re2.h>
 
+#include <iostream>
+
 namespace {
 
 // static const LazyRE2 token_re = ...
@@ -24,8 +26,11 @@ Tokenizer::Tokenizer()
   re2::RE2::Options options;
   options.set_case_sensitive(true);
   options.set_never_capture(true);
+  options.set_dot_nl(true);
   auto re = new re2::RE2(token_re, options);
   priv = new Tokenizer_priv(re);
+
+  std::cout << "RE2 program size: " << this->priv->re->ProgramSize() << std::endl;
 }
 
 Tokenizer::~Tokenizer()
@@ -47,12 +52,6 @@ Tokenizer::tokenize(const re2::StringPiece& text) const
   }
 
   return tokens;
-}
-
-int
-Tokenizer::re2ProgramSize() const
-{
-  return this->priv->re->ProgramSize();
 }
 
 }; // namespace twittok

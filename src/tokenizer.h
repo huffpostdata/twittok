@@ -16,7 +16,6 @@ public:
   ~Tokenizer();
 
   std::vector<Token> tokenize(const re2::StringPiece& text) const;
-  int re2ProgramSize() const;
 
 private:
   Tokenizer_priv* priv;
