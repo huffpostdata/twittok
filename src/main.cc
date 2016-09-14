@@ -1,6 +1,6 @@
 #include "tokenizer.h"
 
-#include <array>
+#include <algorithm>
 #include <cstdlib>
 #include <forward_list>
 #include <fstream>
@@ -16,17 +16,47 @@
 
 #define MAX_LINE_SIZE 1024
 
-namespace std {
-
-template<> struct hash<twittok::StringRef> {
-  size_t operator()(const twittok::StringRef& str) { return str.hash(); }
-};
-
-}
-
 namespace twittok {
 
-typedef spp::sparse_hash_map<twittok::StringRef, int32_t> OriginalMapping;
+struct OriginalMapping {
+  // For a given token, we store all mappings back to the original in a vector.
+  // *gasp*, you say, a _vector_? That means O(N^2) operations? Yes.
+  //
+  // But here's what's great about a vector: insertions use contiguous RAM, and
+  // comparisons almost always use the same RAM because we rarely (never?) have
+  // compare the original string's bytes (the hash and length are good enough).
+  //
+  // Using a vector uses 1/2 the RAM of a sparse_map.
+
+  struct Item {
+    twittok::StringRef string;
+    int32_t n;
+
+    bool operator<(const StringRef& rhs) const
+    {
+      return string.hash() < rhs.hash()
+        || (string.hash() == rhs.hash() && string.size() < rhs.size())
+        || (string.hash() == rhs.hash() && string.size() == rhs.size() && memcmp(string.data(), rhs.data(), string.size()) < 0);
+    }
+  };
+
+  std::vector<Item> values;
+
+  int32_t& operator[](const StringRef& string) {
+    auto it = std::lower_bound(values.begin(), values.end(), string);
+
+    // Keeping the vector sorted is ~10% faster for 6.2M bios.
+    // (Inserting is O(n), so our main loop is O(n^2). But if we didn't keep it
+    // sorted, we'd be O(n^2) anyway.)
+
+    if (it != values.end() && it->string == string) {
+      return it->n;
+    } else {
+      auto new_it = values.insert(it, { string, 0 });
+      return new_it->n;
+    }
+  }
+};
 
 struct NgramInfo {
   size_t nClinton;
@@ -64,9 +94,9 @@ void
 dumpMappings(std::ostream& os, const twittok::OriginalMapping& originalMapping)
 {
   size_t nOther = 0;
-  for (const auto& m : originalMapping) {
-    const auto& original = m.first;
-    const size_t count = m.second;
+  for (const auto& m : originalMapping.values) {
+    const auto& original = m.string;
+    const size_t count = m.n;
     if (count < MinMappingCount || original.contains('\n') || original.contains('\t')) {
       nOther += count;
     } else {
