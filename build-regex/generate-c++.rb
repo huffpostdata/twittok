@@ -126,22 +126,23 @@ REGEXEN[:valid_url_path] = "(?:(?:#{REGEXEN[:valid_general_url_path_chars]}*(?:#
 REGEXEN[:valid_url_query_chars] = "[a-zA-Z0-9!?\\*'\\(\\);:&=\\+\\$\\/%#\\[\\]\\-_\\.,~|@]"
 REGEXEN[:valid_url_query_ending_chars] = "[a-zA-Z0-9_&=#\\/\\-]"
 # DEVIATE_FROM_TWITTER: nix :valid_url_preceding_chars, and don't group
-REGEXEN[:valid_url] = "(?:(?:https?:\\/\\/)?#{REGEXEN[:valid_domain]}(?::(#{REGEXEN[:valid_port_number]}))?(?:/#{REGEXEN[:valid_url_path]}*)?(?:\\?#{REGEXEN[:valid_url_query_chars]}*#{REGEXEN[:valid_url_query_ending_chars]})?)"
+REGEXEN[:valid_url] = "(?:(?:https?:\\/\\/)?#{REGEXEN[:valid_domain]}(?::(#{REGEXEN[:valid_port_number]}))?(?:\\/#{REGEXEN[:valid_url_path]}*)?(?:\\?#{REGEXEN[:valid_url_query_chars]}*#{REGEXEN[:valid_url_query_ending_chars]})?)"
 
 # Now add other regexes, from NLTK
 # Source: https://github.com/nltk/nltk/blob/07bcb7ed51260f5da07be841aebf23235b6af96e/nltk/tokenize/casual.py
 
 # NLTK_DEVIATE add "S" to emoticon
-EMOTICON = "(?:[<>]?[:;=8][\\-o\\*\\']?[\\)\\]\\(\\[dDpPS/\\:\\}\\{@\\|\\\\]|[\\)\\]\\(\\[dDpPS/\\:\\}\\{@\\|\\\\][\\-o\\*\\']?[:;=8][<>]?|<3)"
+EMOTICON = "(?:[<>]?[:;=8][\\-o\\*\\']?[\\)\\]\\(\\[dDpPS\\/\\:\\}\\{@\\|\\\\]|[\\)\\]\\(\\[dDpPS\\/\\:\\}\\{@\\|\\\\][\\-o\\*\\']?[:;=8][<>]?|<3)"
 ASCII_ARROW = "(?:-+>|<-+)"
 HTML_TAG = "(?:<[^>\\s]+>)"
 # NLTK_DEVIATE "phone number" is a bad-idea regex. But numbers with lots of
 # dashes are great. Adjusted NUMBER to allow dashes within.
 # NLTK_DEVIATE use \pL instead of [a-z]
 # NLTK_DEVIATE rearrange (but keep logic the same) to speed up RE2 by 10%
-WORD_WITH_APOSTROPHES_OR_DASHES = "(?:(?:\\pL+['\\-_]+)+\\pL+)"
+# (we always surround \pL and \pN with [], so our JS compatibility script can handle them)
+WORD_WITH_APOSTROPHES_OR_DASHES = "(?:(?:[\\pL]+['\\-_]+)+[\\pL]+)"
 # NLTK_DEVIATE use \pN instead of \d
-NUMBER = "(?:[+\\-]?\\pN+([,/.:\\-]\\pN+)*[+\\-]?)"
+NUMBER = "(?:[+\\-]?[\\pN]+([,\\/.:\\-][\\pN]+)*[+\\-]?)"
 # NLTK_DEVIATE use \pL\pN instead of \w
 WORD_WITHOUT_APOSTROPHES_OR_DASHES = "(?:[\\pL\\pN_]+)"
 # NLTK_DEVIATE nix ELLIPSIS_DOTS. NON_WHITESPACE fills that niche.
