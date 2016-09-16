@@ -88,8 +88,6 @@ public:
 
 namespace {
 
-static const int MinMappingCount = 3; // Below this, we lump mappings to "Other" ... and if even "Other" doesn't have this, we nix the mapping
-
 void
 dumpMappings(std::ostream& os, const twittok::OriginalMapping& originalMapping)
 {
@@ -97,7 +95,7 @@ dumpMappings(std::ostream& os, const twittok::OriginalMapping& originalMapping)
   for (const auto& m : originalMapping.values) {
     const auto& original = m.string;
     const size_t count = m.n;
-    if (count < MinMappingCount || original.contains('\n') || original.contains('\t')) {
+    if (original.contains('\n') || original.contains('\t')) {
       nOther += count;
     } else {
       os << "\t" << count << "\t" << original.to_string() << "\n";
@@ -206,10 +204,8 @@ main(int argc, char** argv) {
     const auto& token = pair.first;
     const auto& info = pair.second;
 
-    if (info.nTotal() > MinMappingCount) {
-      tokensFile << token << "\t" << info.nClinton << "\t" << info.nTrump << "\t" << info.nBoth << "\n";
-      dumpMappings(tokensFile, info.originalTexts);
-    }
+    tokensFile << token << "\t" << info.nClinton << "\t" << info.nTrump << "\t" << info.nBoth << "\n";
+    dumpMappings(tokensFile, info.originalTexts);
   }
 
   return 0;
