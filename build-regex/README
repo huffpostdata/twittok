@@ -4,3 +4,14 @@ To build regular expressions:
 bundle install
 ./generate-c++.rb
 ```
+
+After you've built the C++ one, consider building another for JavaScript. That's
+an ordeal, because ES5 and lower don't support Unicode. (A JavaScript regex for
+`/[💩]/` is equivalent to `/[\ud83d\udca9]/`; apply it to `"💩"` and it won't
+match, because JavaScript sees `"💩"` as two characters but the regex only
+matches a single character.)
+
+```sh
+npm install
+./generate-js.rb
+```
