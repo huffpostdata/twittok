@@ -292,7 +292,6 @@ CsvBioReader::nextBio(Error* err)
 {
   *err = Error::Success;
 
-  // Implementation detail: all methods call fillBuf() before returning.
   fillBufOrReturnValueWithError(UntokenizedBio(), EndOfInput);
 
 #define FAIL_IF_ERROR() if(*err != Error::Success) return UntokenizedBio()
@@ -311,7 +310,7 @@ CsvBioReader::nextBio(Error* err)
   FAIL_IF_ERROR();
 
   char bytes[UntokenizedBio::MaxBioBytes];
-  size_t len = 0; // 0 in case we fail fast
+  size_t len;
 
   readString(bytes, &len, UntokenizedBio::MaxBioBytes, err);
   FAIL_IF_ERROR();
