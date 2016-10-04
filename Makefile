@@ -8,7 +8,7 @@ GTEST_CPPFLAGS=$(CPPFLAGS) -Isrc `gtest-config --cppflags`
 GTEST_LDFLAGS=`gtest-config --ldflags`
 GTEST_LDLIBS=$(LDLIBS) `gtest-config --libs`
 
-SRCS=src/csv_bio_reader.cc src/tokenizer.cc src/stemmer.cc src/porter2_stemmer.cpp src/bio.cc src/string_ref.cc
+SRCS=src/csv_bio_reader.cc src/tokenizer.cc src/stemmer.cc src/porter2_stemmer.cpp src/bio.cc src/string_ref.cc src/ngram_info.cc
 OBJS=$(subst .cpp,.o,$(subst .cc,.o,$(SRCS)))
 
 GTEST_SRCS=test/csv_bio_reader_test.cc test/stemmer_test.cc test/run.cc
