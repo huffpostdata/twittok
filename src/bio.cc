@@ -79,6 +79,7 @@ std::vector<Unigram>
 Bio::unigrams() const
 {
   std::vector<Unigram> ret(unigrams_);
+  std::sort(ret.begin(), ret.end());
   auto new_end = std::unique(ret.begin(), ret.end());
   ret.resize(std::distance(ret.begin(), new_end));
   return ret;
@@ -88,6 +89,7 @@ std::vector<Bigram>
 Bio::bigrams() const
 {
   std::vector<Bigram> ret(unigramsToNgrams<2>(unigrams_));
+  std::sort(ret.begin(), ret.end());
   auto new_end = std::unique(ret.begin(), ret.end());
   ret.resize(std::distance(ret.begin(), new_end));
   return ret;
@@ -97,6 +99,7 @@ std::vector<Trigram>
 Bio::trigrams() const
 {
   std::vector<Trigram> ret(unigramsToNgrams<3>(unigrams_));
+  std::sort(ret.begin(), ret.end());
   auto new_end = std::unique(ret.begin(), ret.end());
   ret.resize(std::distance(ret.begin(), new_end));
   return ret;

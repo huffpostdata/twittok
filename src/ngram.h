@@ -44,6 +44,19 @@ public:
     }
     return true;
   }
+
+  /**
+   * Returns whether LHS grams < RHS grams.
+   */
+  bool operator<(const Ngram<N>& rhs) const {
+    for (size_t i = 0; i < N; i++) {
+      int c = grams[i].compare(rhs.grams[i]);
+      if (c < 0) return true;
+      if (c > 0) return false;
+    }
+
+    return false;
+  }
 };
 
 typedef Ngram<1> Unigram;
