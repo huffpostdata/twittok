@@ -121,7 +121,7 @@ main(int argc, char** argv) {
     }
   }
 
-  const size_t MinCount = 50;
+  const size_t MinCount = 100;
   std::unordered_set<std::string> prefixes;
 
   prefixes = doPass<1>(prefixes, bios, tokensFile, MinCount);
