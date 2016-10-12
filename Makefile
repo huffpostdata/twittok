@@ -8,7 +8,7 @@ GTEST_CPPFLAGS=$(CPPFLAGS) -Isrc `gtest-config --cppflags`
 GTEST_LDFLAGS=`gtest-config --ldflags`
 GTEST_LDLIBS=$(LDLIBS) `gtest-config --libs`
 
-SRCS=src/csv_bio_reader.cc src/tokenizer.cc src/stemmer.cc src/porter2_stemmer.cpp src/bio.cc src/string_ref.cc src/ngram_info.cc
+SRCS=src/csv_bio_reader.cc src/casefold.cc src/tokenizer.cc src/stemmer.cc src/porter2_stemmer.cpp src/bio.cc src/string_ref.cc src/ngram_info.cc src/ngram_pass.cc
 OBJS=$(subst .cpp,.o,$(subst .cc,.o,$(SRCS)))
 
 GTEST_SRCS=test/csv_bio_reader_test.cc test/stemmer_test.cc test/run.cc
@@ -36,7 +36,7 @@ depend: .depend
 	$(CXX) $(CPPFLAGS) -MM $^ >> ./.depend;
 
 clean:
-	$(RM) $(OBJS) $(MAIN_OBJS) $(GTEST_OBJS) twittok test/run
+	$(RM) $(OBJS) $(MAIN_OBJS) $(GTEST_OBJS) .depend twittok test/run
 
 dist-clean: clean
 	$(RM) *~ .depend

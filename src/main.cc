@@ -27,6 +27,7 @@ readUntokenizedBioFromFile(const char* csvFilename)
   size_t nClintonWithBio = 0;
   size_t nTrumpWithBio = 0;
   size_t nBothWithBio = 0;
+  size_t n = 0;
 
   twittok::CsvBioReader reader(csvFilename);
 
@@ -52,12 +53,13 @@ readUntokenizedBioFromFile(const char* csvFilename)
 
     if (untokenizedBio.empty()) continue;
 
+    n++;
     if (untokenizedBio.followsClinton) nClintonWithBio++;
     if (untokenizedBio.followsTrump) nTrumpWithBio++;
     if (untokenizedBio.followsClinton && untokenizedBio.followsTrump) nBothWithBio++;
 
-    if ((nClintonWithBio + nTrumpWithBio - nBothWithBio) % 500000 == 0) {
-      std::cerr << "Read " << (nClintonWithBio + nTrumpWithBio - nBothWithBio) << " bios..." << std::endl;
+    if (n % 1000000 == 0) {
+      std::cerr << "Read " << (n / 1000000) << "M bios..." << std::endl;
     }
 
     ret.push_front(untokenizedBio);
@@ -85,7 +87,7 @@ doPass(
     size_t minCount
 ) {
   twittok::NgramPass<N> pass(prefixes);
-  pass.scanUntokenizedBios(bios);
+  pass.scanBios(bios);
   pass.dump(os, minCount);
   return pass.ngramStrings(minCount);
 }
@@ -110,8 +112,13 @@ main(int argc, char** argv) {
   std::cerr << "Tokenizing and stemming..." << std::endl;
   twittok::Tokenizer tokenizer;
   std::forward_list<twittok::Bio> bios;
+  size_t n = 0;
   for (const auto& untokenizedBio : untokenizedBios) {
     bios.emplace_front(twittok::Bio::buildByTokenizing(untokenizedBio, tokenizer));
+    n++;
+    if (n % 1000000 == 0) {
+      std::cerr << "Tokenized and stemmed " << (n / 1000000) << "M bios" << std::endl;
+    }
   }
 
   const size_t MinCount = 50;
