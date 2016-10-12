@@ -6,8 +6,6 @@
 #include <unicode/utf8.h>
 #include <unicode/utypes.h>
 
-// FIXME nix these
-#include <iostream>
 #include <string>
 
 #include "stemmer.h"
@@ -34,171 +32,11 @@ struct StringRef {
 	bool operator==(const StringRef& rhs) const {
 		return len == rhs.len && strncmp(utf8, rhs.utf8, len) == 0;
 	}
-
-	std::string as_string() const { return std::string(utf8, len); }
 };
 
 // These max buffer sizes are kind of hand-wavy. Don't trust them.
 const size_t MaxNormalizedUCharLen = twittok::stemmer::MaxBytesToStem * 4;
 const size_t MaxNormalizedLen = MaxNormalizedUCharLen * 2;
-
-// From https://raw.githubusercontent.com/nltk/nltk_data/gh-pages/packages/corpora/stopwords.zip
-static const StringRef EnglishStopwords[] = {
-	"a",
-	"about",
-	"above",
-	"after",
-	"again",
-	"against",
-	"ain",
-	"all",
-	"am",
-	"an",
-	"and",
-	"any",
-	"are",
-	"aren",
-	"as",
-	"at",
-	"be",
-	"because",
-	"been",
-	"before",
-	"being",
-	"below",
-	"between",
-	"both",
-	"but",
-	"by",
-	"can",
-	"couldn",
-	"d",
-	"did",
-	"didn",
-	"do",
-	"does",
-	"doesn",
-	"doing",
-	"don",
-	"down",
-	"during",
-	"each",
-	"few",
-	"for",
-	"from",
-	"further",
-	"had",
-	"hadn",
-	"has",
-	"hasn",
-	"have",
-	"haven",
-	"having",
-	"he",
-	"her",
-	"here",
-	"hers",
-	"herself",
-	"him",
-	"himself",
-	"his",
-	"how",
-	"i",
-	"if",
-	"in",
-	"into",
-	"is",
-	"isn",
-	"it",
-	"its",
-	"itself",
-	"just",
-	"ll",
-	"m",
-	"ma",
-	"me",
-	"mightn",
-	"more",
-	"most",
-	"mustn",
-	"my",
-	"myself",
-	"needn",
-	"no",
-	"nor",
-	"not",
-	"now",
-	"o",
-	"of",
-	"off",
-	"on",
-	"once",
-	"only",
-	"or",
-	"other",
-	"our",
-	"ours",
-	"ourselves",
-	"out",
-	"over",
-	"own",
-	"re",
-	"s",
-	"same",
-	"shan",
-	"she",
-	"should",
-	"shouldn",
-	"so",
-	"some",
-	"such",
-	"t",
-	"than",
-	"that",
-	"the",
-	"their",
-	"theirs",
-	"them",
-	"themselves",
-	"then",
-	"there",
-	"these",
-	"they",
-	"this",
-	"those",
-	"through",
-	"to",
-	"too",
-	"under",
-	"until",
-	"up",
-	"ve",
-	"very",
-	"was",
-	"wasn",
-	"we",
-	"were",
-	"weren",
-	"what",
-	"when",
-	"where",
-	"which",
-	"while",
-	"who",
-	"whom",
-	"why",
-	"will",
-	"with",
-	"won",
-	"wouldn",
-	"y",
-	"you",
-	"your",
-	"yours",
-	"yourself",
-	"yourselves"
-};
-const size_t NEnglishStopwords = sizeof(EnglishStopwords) / sizeof(StringRef);
 
 bool is_too_long(size_t len)
 {
@@ -246,30 +84,6 @@ bool is_url_or_just_dots(const char* utf8, size_t len)
 bool should_abort_stem_right_away(const char* utf8, size_t len)
 {
 	return is_too_long(len) || is_url_or_just_dots(utf8, len);
-}
-
-bool is_stopword(const char* utf8, size_t len)
-{
-	// binary search through EnglishStopwords
-	size_t begin = 0;
-	size_t end = NEnglishStopwords;
-
-	StringRef needle(utf8, len);
-
-	while (begin < end) {
-		size_t mid = (begin + end) >> 1; // begin <= mid < end
-		const StringRef& stopword = EnglishStopwords[mid];
-		if (stopword < needle) {
-			begin = mid + 1; // begin <= end because mid < end
-		} else {
-			end = mid; // begin <= end because begin <= mid
-		}
-	}
-
-	if (begin == NEnglishStopwords) return false;
-
-	const StringRef& finalStopword = EnglishStopwords[begin];
-	return finalStopword == needle;
 }
 
 static const icu::Transliterator* transliterator = NULL;
@@ -338,7 +152,6 @@ first_codepoint_is_alnum(const char* utf8) {
 
 typedef enum NormalizedTokenType {
 	Empty,        // this token normalized to zilch
-	Stopword,     // this token should disappear because it's common in English
 	Symbol,       // this token should disappear because it's punctuation (or similar)
 	AsciiLetters, // this token needs Porter2-English stemming applied
 	Other         // this token is not pure-ASCII and not invalid. Number? Hashtag? Mention? Leave it alone
@@ -348,8 +161,6 @@ NormalizedTokenType
 calculate_normalized_token_type(const char* utf8, size_t len)
 {
 	if (len == 0) return Empty;
-
-	if (is_stopword(utf8, len)) return Stopword;
 
 	if (utf8[0] == '#' || utf8[0] == '@') return Other;
 
@@ -383,7 +194,6 @@ stem(const char* utf8, size_t len)
 	// stem, pass-through, or return empty string
 	switch (calculate_normalized_token_type(normalized_utf8, normalized_len)) {
 		case Empty:
-		case Stopword:
 		case Symbol:
       return std::string();
 			break;

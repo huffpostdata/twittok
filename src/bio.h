@@ -21,9 +21,7 @@ public:
   Bio(const std::vector<Tokenizer::Token>& tokens, bool followsClinton_, bool followsTrump_);
   static Bio buildByTokenizing(const UntokenizedBio& untokenizedBio, const Tokenizer& tokenizer);
 
-  std::vector<Unigram> unigrams() const;
-  std::vector<Bigram> bigrams() const;
-  std::vector<Trigram> trigrams() const;
+  template<size_t N> std::vector<Ngram<N> > ngrams() const;
 
   bool followsClinton;
   bool followsTrump;

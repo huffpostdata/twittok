@@ -75,34 +75,26 @@ Bio::buildByTokenizing(const UntokenizedBio& untokenizedBio, const Tokenizer& to
   return Bio(tokens, untokenizedBio.followsClinton, untokenizedBio.followsTrump);
 }
 
-std::vector<Unigram>
-Bio::unigrams() const
+template<size_t N>
+std::vector<Ngram<N> >
+Bio::ngrams() const
 {
-  std::vector<Unigram> ret(unigrams_);
+  std::vector<Ngram<N> > ret(unigramsToNgrams<N>(unigrams_));
   std::sort(ret.begin(), ret.end());
   auto new_end = std::unique(ret.begin(), ret.end());
   ret.resize(std::distance(ret.begin(), new_end));
   return ret;
 }
 
-std::vector<Bigram>
-Bio::bigrams() const
-{
-  std::vector<Bigram> ret(unigramsToNgrams<2>(unigrams_));
-  std::sort(ret.begin(), ret.end());
-  auto new_end = std::unique(ret.begin(), ret.end());
-  ret.resize(std::distance(ret.begin(), new_end));
-  return ret;
-}
-
-std::vector<Trigram>
-Bio::trigrams() const
-{
-  std::vector<Trigram> ret(unigramsToNgrams<3>(unigrams_));
-  std::sort(ret.begin(), ret.end());
-  auto new_end = std::unique(ret.begin(), ret.end());
-  ret.resize(std::distance(ret.begin(), new_end));
-  return ret;
-}
+template std::vector<Ngram<1> > Bio::ngrams() const;
+template std::vector<Ngram<2> > Bio::ngrams() const;
+template std::vector<Ngram<3> > Bio::ngrams() const;
+template std::vector<Ngram<4> > Bio::ngrams() const;
+template std::vector<Ngram<5> > Bio::ngrams() const;
+template std::vector<Ngram<6> > Bio::ngrams() const;
+template std::vector<Ngram<7> > Bio::ngrams() const;
+template std::vector<Ngram<8> > Bio::ngrams() const;
+template std::vector<Ngram<9> > Bio::ngrams() const;
+template std::vector<Ngram<10> > Bio::ngrams() const;
 
 }; // namespace twittok

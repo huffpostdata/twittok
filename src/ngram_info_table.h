@@ -9,9 +9,10 @@
 
 namespace twittok {
 
+template<int N>
 class NgramInfoTable {
 public:
-  template<int N> void add(const Bio& bio, const Ngram<N>& ngram) {
+  void add(const Bio& bio, const Ngram<N>& ngram) {
     NgramInfo& info = gramToInfo[ngram.gramsString()];
     if (bio.followsClinton) info.nClinton++;
     if (bio.followsTrump) info.nTrump++;

@@ -9,11 +9,32 @@
 
 namespace twittok {
 
-template<int N>
+template<size_t N>
 class Ngram {
 public:
   std::array<std::string, N> grams;
   StringRef original;
+
+  /**
+   * Returns all but the last (stemmed) word in the ngram.
+   */
+  std::string prefixGramsString() const {
+    if (N == 1) return std::string();
+
+    size_t len = N - 2; // spaces
+    for (size_t i = 0; i < N - 1; i++) {
+      len += grams[i].size();
+    }
+
+    std::string ret(len, ' '); // spaces so we don't need to write them in between
+    size_t pos = 0;
+    for (size_t i = 0; i < N - 1; i++) {
+      ret.replace(pos, grams[i].size(), grams[i]);
+      pos += grams[i].size() + 1;
+    }
+
+    return ret;
+  }
 
   std::string gramsString() const {
     if (N == 1) return grams[0];

@@ -37,6 +37,7 @@ struct NgramInfo {
   OriginalTexts originalTexts;
 
   inline size_t nTotal() const { return nClinton + nTrump - nBoth; }
+  inline size_t nVariants() const { return originalTexts.values.size(); }
 };
 
 } // namespace twittok

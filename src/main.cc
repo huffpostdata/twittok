@@ -5,36 +5,16 @@
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <unordered_set>
 
 #include "bio.h"
 #include "csv_bio_reader.h"
 #include "untokenized_bio.h"
-#include "ngram.h"
-#include "ngram_info.h"
-#include "ngram_info_table.h"
-#include "string_ref.h"
+#include "ngram_pass.h"
 
 #define MAX_LINE_SIZE 1024
 
 namespace {
-
-void
-dumpMappings(std::ostream& os, const twittok::NgramInfo::OriginalTexts& originalTexts)
-{
-  size_t nOther = 0;
-  for (const auto& m : originalTexts.values) {
-    const auto& original = m.string;
-    const size_t count = m.n;
-    if (original.contains('\n') || original.contains('\t')) {
-      nOther += count;
-    } else {
-      os << "\t" << count << "\t" << original.to_string() << "\n";
-    }
-  }
-  if (nOther != 0) {
-    os << "\t" << nOther << "\t\n";
-  }
-}
 
 std::forward_list<twittok::UntokenizedBio>
 readUntokenizedBioFromFile(const char* csvFilename)
@@ -96,6 +76,20 @@ readUntokenizedBioFromFile(const char* csvFilename)
   return ret;
 }
 
+template<int N>
+std::unordered_set<std::string>
+doPass(
+    const std::unordered_set<std::string>& prefixes,
+    const std::forward_list<twittok::Bio>& bios,
+    std::ostream& os,
+    size_t minCount
+) {
+  twittok::NgramPass<N> pass(prefixes);
+  pass.scanUntokenizedBios(bios);
+  pass.dump(os, minCount);
+  return pass.ngramStrings(minCount);
+}
+
 } // namespace ""
 
 int
@@ -105,38 +99,34 @@ main(int argc, char** argv) {
     exit(1);
   }
 
-  std::forward_list<twittok::UntokenizedBio> untokenizedBios = readUntokenizedBioFromFile(argv[1]);
-
-  twittok::Tokenizer tokenizer;
-  twittok::NgramInfoTable ngrams;
-  ngrams.gramToInfo.reserve(100*1000*1000); // speed up the start
-
-  size_t n = 0;
-
-  for (const auto& untokenizedBio : untokenizedBios) {
-    twittok::Bio bio = twittok::Bio::buildByTokenizing(untokenizedBio, tokenizer);
-
-    n++;
-    if (n % 100000 == 0) {
-      std::cerr << "Processed " << n << " bios..." << std::endl;
-    }
-
-    for (const auto& ngram : bio.unigrams()) { ngrams.add(bio, ngram); }
-    for (const auto& ngram : bio.bigrams()) { ngrams.add(bio, ngram); }
-    for (const auto& ngram : bio.trigrams()) { ngrams.add(bio, ngram); }
-  }
-
-  std::cout << "Dumping results" << std::endl;
+  auto untokenizedBios = readUntokenizedBioFromFile(argv[1]);
 
   std::ofstream tokensFile(argv[2], std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
 
-  for (const auto& pair : ngrams.gramToInfo) {
-    const auto& token = pair.first;
-    const auto& info = pair.second;
-
-    tokensFile << token << "\t" << info.nClinton << "\t" << info.nTrump << "\t" << info.nBoth << "\n";
-    dumpMappings(tokensFile, info.originalTexts);
+  // We tokenize and stem once, instead of every pass.
+  //
+  // This is 4x faster than tokenizing+stemming each pass, but it gulps
+  // memory -- about 1kb/bio. 20M bios => 20GB.
+  std::cerr << "Tokenizing and stemming..." << std::endl;
+  twittok::Tokenizer tokenizer;
+  std::forward_list<twittok::Bio> bios;
+  for (const auto& untokenizedBio : untokenizedBios) {
+    bios.emplace_front(twittok::Bio::buildByTokenizing(untokenizedBio, tokenizer));
   }
+
+  const size_t MinCount = 50;
+  std::unordered_set<std::string> prefixes;
+
+  prefixes = doPass<1>(prefixes, bios, tokensFile, MinCount);
+  prefixes = doPass<2>(prefixes, bios, tokensFile, MinCount);
+  prefixes = doPass<3>(prefixes, bios, tokensFile, MinCount);
+  prefixes = doPass<4>(prefixes, bios, tokensFile, MinCount);
+  prefixes = doPass<5>(prefixes, bios, tokensFile, MinCount);
+  prefixes = doPass<6>(prefixes, bios, tokensFile, MinCount);
+  prefixes = doPass<7>(prefixes, bios, tokensFile, MinCount);
+  prefixes = doPass<8>(prefixes, bios, tokensFile, MinCount);
+  prefixes = doPass<9>(prefixes, bios, tokensFile, MinCount);
+  prefixes = doPass<10>(prefixes, bios, tokensFile, MinCount);
 
   return 0;
 }
