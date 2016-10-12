@@ -2,7 +2,6 @@
 
 #include <cstdlib>
 #include <forward_list>
-#include <unordered_map>
 #include <fstream>
 #include <iostream>
 #include <string>
@@ -12,27 +11,10 @@
 #include "untokenized_bio.h"
 #include "ngram.h"
 #include "ngram_info.h"
+#include "ngram_info_table.h"
 #include "string_ref.h"
 
 #define MAX_LINE_SIZE 1024
-
-namespace twittok {
-
-class NgramInfoTable {
-public:
-  template<int N>
-  void add(const Bio& bio, const Ngram<N> ngram) {
-    NgramInfo& info = gramToInfo[ngram.gramsString()];
-    if (bio.followsClinton) info.nClinton++;
-    if (bio.followsTrump) info.nTrump++;
-    if (bio.followsClinton && bio.followsTrump) info.nBoth++;
-    ++info.originalTexts[ngram.original];
-  }
-
-  std::unordered_map<std::string, NgramInfo> gramToInfo;
-};
-
-} // namespace twittok
 
 namespace {
 
