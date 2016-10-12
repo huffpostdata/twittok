@@ -262,7 +262,11 @@ CsvBioReader::readString(char* out, size_t* out_len, size_t max_len, Error* err)
 {
   fillBufOrReturnWithError(ExpectedNewline);
 
-  if (*begin_ == '\n') return; // empty bio
+  if (*begin_ == '\n') {
+    // empty bio
+    *out_len = 0;
+    return;
+  }
 
   if (*begin_ == '"') {
     readQuotedString(out, out_len, max_len, err);
