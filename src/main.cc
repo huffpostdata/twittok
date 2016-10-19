@@ -26,7 +26,7 @@ struct UntokenizedBiosResult {
   size_t nClintonWithBio = 0;
   size_t nTrumpWithBio = 0;
   size_t nBothWithBio = 0;
-  size_t nWithBio() const { return nClinton + nTrump - nBoth; }
+  size_t nWithBio() const { return nClintonWithBio + nTrumpWithBio - nBothWithBio; }
 
   void dump(std::ostream& os) const {
     os << "n: " << n() << "\n";
