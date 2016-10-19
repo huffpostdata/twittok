@@ -30,7 +30,7 @@ Tokenizer::Tokenizer()
   auto re = new re2::RE2(token_re, options);
   priv = new Tokenizer_priv(re);
 
-  std::cout << "RE2 program size: " << this->priv->re->ProgramSize() << std::endl;
+  std::cerr << "RE2 program size: " << this->priv->re->ProgramSize() << std::endl;
 }
 
 Tokenizer::~Tokenizer()

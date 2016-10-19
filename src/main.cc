@@ -16,18 +16,35 @@
 
 namespace {
 
-std::forward_list<twittok::UntokenizedBio>
-readUntokenizedBioFromFile(const char* csvFilename)
-{
-  std::cout << "Reading CSV file " << csvFilename << "..." << std::endl;
-
+struct UntokenizedBiosResult {
+  std::forward_list<twittok::UntokenizedBio> untokenizedBios;
+  std::string error;
   size_t nClinton = 0;
   size_t nTrump = 0;
   size_t nBoth = 0;
+  size_t n() const { return nClinton + nTrump - nBoth; }
   size_t nClintonWithBio = 0;
   size_t nTrumpWithBio = 0;
   size_t nBothWithBio = 0;
-  size_t n = 0;
+  size_t nWithBio() const { return nClinton + nTrump - nBoth; }
+
+  void dump(std::ostream& os) const {
+    os << "n: " << n() << "\n";
+    os << "nClinton: " << nClinton << "\n";
+    os << "nTrump: " << nTrump << "\n";
+    os << "nBoth: " << nBoth << "\n";
+    os << "nWithBio: " << nWithBio() << "\n";
+    os << "nClintonWithBio: " << nClintonWithBio << "\n";
+    os << "nTrumpWithBio: " << nTrumpWithBio << "\n";
+    os << "nBothWithBio: " << nBothWithBio << "\n";
+    os << std::flush;
+  }
+};
+
+UntokenizedBiosResult
+readUntokenizedBiosFromFile(const char* csvFilename)
+{
+  UntokenizedBiosResult result;
 
   twittok::CsvBioReader reader(csvFilename);
 
@@ -38,44 +55,28 @@ readUntokenizedBioFromFile(const char* csvFilename)
     twittok::UntokenizedBio untokenizedBio(reader.nextBio(&error));
 
     if (error == twittok::CsvBioReader::Error::EndOfInput) {
-      std::cerr << "Finished reading CSV" << std::endl;
       break;
     }
 
     if (error != twittok::CsvBioReader::Error::Success) {
-      std::cerr << "ERROR reading CSV: " << twittok::CsvBioReader::describeError(error) << std::endl;
-      return std::forward_list<twittok::UntokenizedBio>();
+      result.error = twittok::CsvBioReader::describeError(error);
+      break;
     }
 
-    if (untokenizedBio.followsClinton) nClinton++;
-    if (untokenizedBio.followsTrump) nTrump++;
-    if (untokenizedBio.followsClinton && untokenizedBio.followsTrump) nBoth++;
+    if (untokenizedBio.followsClinton) result.nClinton++;
+    if (untokenizedBio.followsTrump) result.nTrump++;
+    if (untokenizedBio.followsClinton && untokenizedBio.followsTrump) result.nBoth++;
 
     if (untokenizedBio.empty()) continue;
 
-    n++;
-    if (untokenizedBio.followsClinton) nClintonWithBio++;
-    if (untokenizedBio.followsTrump) nTrumpWithBio++;
-    if (untokenizedBio.followsClinton && untokenizedBio.followsTrump) nBothWithBio++;
+    if (untokenizedBio.followsClinton) result.nClintonWithBio++;
+    if (untokenizedBio.followsTrump) result.nTrumpWithBio++;
+    if (untokenizedBio.followsClinton && untokenizedBio.followsTrump) result.nBothWithBio++;
 
-    if (n % 1000000 == 0) {
-      std::cerr << "Read " << (n / 1000000) << "M bios..." << std::endl;
-    }
-
-    ret.push_front(untokenizedBio);
+    result.untokenizedBios.push_front(untokenizedBio);
   }
 
-  std::cout << "Statistics:" << std::endl;
-  std::cout << "  Total followers: " << (nClinton + nTrump - nBoth) << std::endl;
-  std::cout << "  Clinton followers: " << nClinton << std::endl;
-  std::cout << "  Trump followers: " << nTrump << std::endl;
-  std::cout << "  (Clinton+Trump) followers: " << nBoth << std::endl;
-  std::cout << "  Total followers with bios: " << (nClintonWithBio + nTrumpWithBio - nBothWithBio) << std::endl;
-  std::cout << "  Clinton followers with bios: " << nClintonWithBio << std::endl;
-  std::cout << "  Trump followers with bios: " << nTrumpWithBio << std::endl;
-  std::cout << "  (Clinton+Trump) followers with bios: " << nBothWithBio << std::endl;
-
-  return ret;
+  return result;
 }
 
 template<int N>
@@ -101,9 +102,14 @@ main(int argc, char** argv) {
     exit(1);
   }
 
-  auto untokenizedBios = readUntokenizedBioFromFile(argv[1]);
-
+  std::cerr << "Preparing to write to " << std::string(argv[2]) << std::endl;
   std::ofstream tokensFile(argv[2], std::ofstream::out | std::ofstream::binary | std::ofstream::trunc);
+
+  std::cerr << "Reading bios from " << std::string(argv[1]) << std::endl;
+  UntokenizedBiosResult untokenizedBios = readUntokenizedBiosFromFile(argv[1]);
+
+  std::cerr << "Outputting statistics on " << untokenizedBios.nWithBio() << " bios" << std::endl;
+  untokenizedBios.dump(tokensFile);
 
   // We tokenize and stem once, instead of every pass.
   //
@@ -113,7 +119,7 @@ main(int argc, char** argv) {
   twittok::Tokenizer tokenizer;
   std::forward_list<twittok::Bio> bios;
   size_t n = 0;
-  for (const auto& untokenizedBio : untokenizedBios) {
+  for (const auto& untokenizedBio : untokenizedBios.untokenizedBios) {
     bios.emplace_front(twittok::Bio::buildByTokenizing(untokenizedBio, tokenizer));
     n++;
     if (n % 1000000 == 0) {
